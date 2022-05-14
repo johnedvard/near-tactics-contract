@@ -1,25 +1,57 @@
-import { Contract } from "../assembly";
+import { VMContext } from 'near-sdk-as';
+import { Contract } from '../assembly';
 
-let contract: Contract
-
+let contract: Contract;
+const P1_ID = 'p1.near';
+const P2_ID = 'p2.near';
 beforeEach(() => {
-  contract = new Contract()
-})
+  contract = new Contract();
+  VMContext.setSigner_account_id(P1_ID);
+  VMContext.setPredecessor_account_id(P1_ID);
+});
 
-describe("Contract", () => {
-  // VIEW method tests
+describe('Game Logic', () => {
+  it('creates new game', () => {
+    contract.createGame();
+    const game = contract.getGame(P1_ID);
+    expect(game).toBeTruthy();
+    expect(game.p1).toStrictEqual(P1_ID);
+    expect(game.p2).toStrictEqual(''); // player 2 not joined yet
+  });
 
-  it("says hello", () => {
-    expect(contract.helloWorld()).toStrictEqual("hello world")
-  })
+  it('does not create two games while playing or joining', () => {
+    contract.createGame();
+    const game = contract.getGame(P1_ID);
+    contract.createGame();
+    const game2 = contract.getGame(P1_ID);
+    expect(game).toStrictEqual(game2);
+  });
 
-  it("reads data", () => {
-    expect(contract.read("some key")).toStrictEqual("🚫 Key [ some key ] not found in storage. ( storage [ 0 bytes ] )")
-  })
+  it('creates new game if game is ended', () => {
+    contract.createGame();
+    const game = contract.getGame(P1_ID);
+    game.endGame();
+    contract.createGame();
+    const game2 = contract.getGame(P1_ID);
+    expect(game).not.toStrictEqual(game2);
+  });
 
-  // CHANGE method tests
+  it('joins existing game', () => {
+    contract.createGame();
+    VMContext.setSigner_account_id(P2_ID);
+    VMContext.setPredecessor_account_id(P2_ID);
+    contract.joinGame(P1_ID);
+    const game = contract.getGame(P1_ID);
+    expect(game.p2).toStrictEqual(P2_ID);
+  });
 
-  it("saves data to contract storage", () => {
-    expect(contract.write("some-key", "some value")).toStrictEqual("✅ Data saved. ( storage [ 18 bytes ] )")
-  })
-})
+  it('Cannot join ended or game in progress', () => {
+    contract.createGame();
+    VMContext.setSigner_account_id(P2_ID);
+    VMContext.setPredecessor_account_id(P2_ID);
+    contract.joinGame(P1_ID);
+    expect(contract.joinGame(P1_ID)).toBeFalsy();
+    contract.endGame(P1_ID);
+    expect(contract.joinGame(P1_ID)).toBeFalsy();
+  });
+});
