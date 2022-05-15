@@ -52,4 +52,51 @@ export class Contract {
       this.games.set(game.gameId, game); // Need to actually update the game state to storage
     }
   }
+
+  /**
+   * The contract remembers the state, and pass it along to the other player after they commit their commands.
+   * @param json the client state.
+   * @returns {string} the commands from the other player if they commited their commands already
+   */
+  commitCommands(gameId: string, json: string): string {
+    const game: Game | null = this.getGame(gameId);
+    if (!game) return '';
+    const turns = this.getPlayerTurns(game);
+    const ownTurn = turns[0];
+    const otherTurn = turns[1];
+    if (ownTurn == game.currentTurn) {
+      // can only commit one command each turn.
+      // TODO (johnedvard) set commitedState for player
+      game.advancePlayerTurn(context.sender);
+    }
+    if (ownTurn == otherTurn) {
+      // both players have commit their commands for the round
+      game.advanceToNextRound();
+      // TODO (johnedvard) return the other player's commited commands
+    }
+    return '';
+  }
+
+  /**
+   *
+   * @param game
+   * @returns {number[]} always a tuple of two numbers where the first index is our own turn
+   */
+  private getPlayerTurns(game: Game): number[] {
+    this.assertOwnGame(game);
+    let ownTurn = game.p1Turn;
+    let otherTurn = game.p2Turn;
+    if (context.sender == game.p2) {
+      ownTurn = game.p2Turn;
+      otherTurn = game.p1Turn;
+    }
+    return [ownTurn, otherTurn];
+  }
+
+  private assertOwnGame(game: Game): void {
+    assert(
+      game.p1 == context.sender || game.p2 == context.sender,
+      'Can only concede own game'
+    );
+  }
 }

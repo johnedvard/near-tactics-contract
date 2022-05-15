@@ -14,7 +14,7 @@ describe('Game Logic', () => {
   it('creates new game', () => {
     contract.createGame();
     const game = contract.getGame(P1_ID);
-    expect(game).toBeTruthy();
+    expect(game.isNull()).toBeFalsy();
     expect(game.p1).toStrictEqual(P1_ID);
     expect(game.p2).toStrictEqual(''); // player 2 not joined yet
   });
