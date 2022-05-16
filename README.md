@@ -6,15 +6,13 @@ The client need to long poll the contract to get updates, such as knowing that t
 
 ### Singleton
 
-This server is written in the Æsingelton styleÆ.
+This server is written in the "singelton style".
 
 We say that an AssemblyScript contract is written in the "singleton style" when the `index.ts` file (the contract entry point) has a single exported class (the name of the class doesn't matter) that is decorated with `@nearBindgen`.
 
 In this case, all methods on the class become public contract methods unless marked `private`. Also, all instance variables are stored as a serialized instance of the class under a special storage key named `STATE`. AssemblyScript uses JSON for storage serialization (as opposed to Rust contracts which use a custom binary serialization format called borsh).
 
 ### Getting started
-
-(see below for video recordings of each of the following steps)
 
 INSTALL `NEAR CLI` first like this: `npm i -g near-cli`
 

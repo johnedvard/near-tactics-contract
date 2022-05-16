@@ -1,5 +1,6 @@
 import { VMContext } from 'near-sdk-as';
 import { Contract } from '../assembly';
+import { Game } from '../assembly/game';
 
 let contract: Contract;
 const P1_ID = 'p1.near';
@@ -10,7 +11,14 @@ beforeEach(() => {
   VMContext.setPredecessor_account_id(P1_ID);
 });
 
-describe('Game Logic', () => {
+const startGame = (contract: Contract): void => {
+  contract.createGame();
+  VMContext.setSigner_account_id(P2_ID);
+  VMContext.setPredecessor_account_id(P2_ID);
+  contract.joinGame(P1_ID);
+};
+
+describe('Create and join game', () => {
   it('creates new game', () => {
     contract.createGame();
     const game = contract.getGame(P1_ID);
@@ -37,21 +45,69 @@ describe('Game Logic', () => {
   });
 
   it('joins existing game', () => {
-    contract.createGame();
-    VMContext.setSigner_account_id(P2_ID);
-    VMContext.setPredecessor_account_id(P2_ID);
-    contract.joinGame(P1_ID);
+    startGame(contract);
     const game = contract.getGame(P1_ID);
     expect(game.p2).toStrictEqual(P2_ID);
   });
 
   it('Cannot join ended or game in progress', () => {
-    contract.createGame();
-    VMContext.setSigner_account_id(P2_ID);
-    VMContext.setPredecessor_account_id(P2_ID);
-    contract.joinGame(P1_ID);
+    startGame(contract);
     expect(contract.joinGame(P1_ID)).toBeFalsy();
     contract.endGame(P1_ID);
     expect(contract.joinGame(P1_ID)).toBeFalsy();
+  });
+});
+
+describe('Take turns', () => {
+  it('Sets start turn correctly', () => {
+    startGame(contract);
+    const game: Game = contract.getGame(P1_ID);
+    expect(game.p1Turn).toStrictEqual(0);
+    expect(game.p2Turn).toStrictEqual(0);
+    expect(game.currentTurn).toStrictEqual(0);
+  });
+
+  it('Advance to next round p2 first', () => {
+    startGame(contract);
+
+    // p2 commits move
+    contract.commitCommands(P1_ID, '');
+    contract.commitCommands(P1_ID, ''); // should not increase player turn
+    let game: Game = contract.getGame(P1_ID);
+    expect(game.p1Turn).toStrictEqual(0);
+    expect(game.p2Turn).toStrictEqual(1);
+    expect(game.currentTurn).toStrictEqual(0);
+
+    // p1 commits move
+    VMContext.setSigner_account_id(P1_ID);
+    VMContext.setPredecessor_account_id(P1_ID);
+    contract.commitCommands(P1_ID, '');
+    game = contract.getGame(P1_ID);
+    expect(game.p2Turn).toStrictEqual(1);
+    expect(game.p1Turn).toStrictEqual(1);
+    expect(game.currentTurn).toStrictEqual(1);
+  });
+
+  it('Advance to next round p1 first', () => {
+    startGame(contract);
+
+    // p1 commits move
+    VMContext.setSigner_account_id(P1_ID);
+    VMContext.setPredecessor_account_id(P1_ID);
+    contract.commitCommands(P1_ID, '');
+    contract.commitCommands(P1_ID, ''); // should not increase player turn
+    let game: Game = contract.getGame(P1_ID);
+    expect(game.p1Turn).toStrictEqual(1);
+    expect(game.p2Turn).toStrictEqual(0);
+    expect(game.currentTurn).toStrictEqual(0);
+
+    // p2 commits move
+    VMContext.setSigner_account_id(P2_ID);
+    VMContext.setPredecessor_account_id(P2_ID);
+    contract.commitCommands(P1_ID, '');
+    game = contract.getGame(P1_ID);
+    expect(game.p1Turn).toStrictEqual(1);
+    expect(game.p2Turn).toStrictEqual(1);
+    expect(game.currentTurn).toStrictEqual(1);
   });
 });
