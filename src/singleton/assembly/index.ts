@@ -59,17 +59,15 @@ export class Contract {
    * @returns {string} the commands from the other player if they commited their commands already
    */
   commitCommands(gameId: string, json: string): string {
-    logging.log('commit command');
     const game: Game | null = this.getGame(gameId);
     if (!game) return '';
     const turns = this.getPlayerTurns(game);
     const ownTurn = turns[0];
     if (ownTurn == game.currentTurn) {
       // can only commit one command each turn.
-      // TODO (johnedvard) set commitedState for player
+      game.storePlayerCommand(context.sender, json);
       game.advancePlayerTurn(context.sender);
       if (game.p1Turn == game.p2Turn) {
-        logging.log('advance next round');
         // both players have committed their commands for the round
         game.advanceToNextRound();
         // TODO (johnedvard) return the other player's commited commands

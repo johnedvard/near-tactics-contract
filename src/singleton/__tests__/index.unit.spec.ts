@@ -111,3 +111,31 @@ describe('Take turns', () => {
     expect(game.currentTurn).toStrictEqual(1);
   });
 });
+
+describe('Store commands', () => {
+  it('Stores command after taking turn', () => {
+    startGame(contract);
+    // p2 commits move
+    contract.commitCommands(P1_ID, '{"a":"a"}');
+    contract.commitCommands(P1_ID, '{"b":"b"}'); // should not overwrite command
+    let game: Game = contract.getGame(P1_ID);
+    expect(game.p2Commands[0]).toStrictEqual('{"a":"a"}');
+    expect(game.p2Commands[1]).toStrictEqual('');
+    expect(game.p2Commands.length).toStrictEqual(2);
+    expect(game.p1Commands[0]).toStrictEqual('');
+    expect(game.p1Commands.length).toStrictEqual(1);
+
+    // p1 commits move
+    VMContext.setSigner_account_id(P1_ID);
+    VMContext.setPredecessor_account_id(P1_ID);
+    contract.commitCommands(P1_ID, '{"c":"c"}');
+    contract.commitCommands(P1_ID, '{"d":"d"}'); // will be able to commit move because p1 commited moves first in round 1
+    contract.commitCommands(P1_ID, '{"e":"e"}'); // should not overwrite command
+    game = contract.getGame(P1_ID);
+    expect(game.p1Commands[0]).toStrictEqual('{"c":"c"}');
+    expect(game.p1Commands[1]).toStrictEqual('{"d":"d"}');
+    expect(game.p1Commands[2]).toStrictEqual('');
+    expect(game.p1Commands.length).toStrictEqual(3);
+    expect(game.p2Commands.length).toStrictEqual(2);
+  });
+});
