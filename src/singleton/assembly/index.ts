@@ -92,18 +92,31 @@ export class Contract {
       'Can only get commands for game we are participating in'
     );
     let otherPlayerCommands: string[] = [];
-    if (context.sender == game.p2) otherPlayerCommands = game.p2Commands;
-    if (context.sender == game.p1) otherPlayerCommands = game.p1Commands;
-    if (otherPlayerCommands.length >= pTurn) return otherPlayerCommands[pTurn];
+    if (context.sender == game.p2) otherPlayerCommands = game.p1Commands;
+    if (context.sender == game.p1) otherPlayerCommands = game.p2Commands;
+    if (otherPlayerCommands.length > pTurn) return otherPlayerCommands[pTurn];
     return '';
   }
 
   /**
+   * Similar to {@see getOtherPlayersCommand}, but will always give correct command according to round and player's turn
+   */
+  getOtherPlayersNextCommand(gameId: string): string {
+    const game: Game | null = this.getGame(gameId);
+    if (!game) return '';
+    const turns = this.getPlayerTurns(game);
+    const otherTurn = turns[1];
+    let turnToGet: i32 = otherTurn;
+    // There's a possibility that the other player commited two moves before own player got the first result during long polling
+    if (game.currentTurn < otherTurn) turnToGet = game.currentTurn;
+    return this.getOtherPlayersCommand(gameId, turnToGet);
+  }
+  /**
    *
    * @param game
-   * @returns {number[]} always a tuple of two numbers where the first index is our own turn
+   * @returns {i32[]} always a tuple of two numbers where the first index is our own turn
    */
-  private getPlayerTurns(game: Game): number[] {
+  private getPlayerTurns(game: Game): i32[] {
     this.assertOwnGame(game, 'Can only concede own game');
     let ownTurn = game.p1Turn;
     let otherTurn = game.p2Turn;

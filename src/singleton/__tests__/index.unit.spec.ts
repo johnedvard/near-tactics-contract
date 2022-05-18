@@ -138,4 +138,59 @@ describe('Store commands', () => {
     expect(game.p1Commands.length).toStrictEqual(3);
     expect(game.p2Commands.length).toStrictEqual(2);
   });
+
+  it('gets a command from other player', () => {
+    startGame(contract);
+    // p2 commits move
+    contract.commitCommands(P1_ID, '{"a":"a"}');
+    contract.commitCommands(P1_ID, '{"b":"b"}'); // should not overwrite command
+    expect(contract.getOtherPlayersCommand(P1_ID, 0)).toStrictEqual(''); // p1 hasn't commited any moves yet
+    expect(contract.getOtherPlayersCommand(P1_ID, 1)).toStrictEqual('');
+
+    // p1 gets command from p2
+    VMContext.setSigner_account_id(P1_ID);
+    VMContext.setPredecessor_account_id(P1_ID);
+    expect(contract.getOtherPlayersCommand(P1_ID, 0)).toStrictEqual(
+      '{"a":"a"}'
+    );
+    expect(contract.getOtherPlayersCommand(P1_ID, 1)).toStrictEqual('');
+    expect(contract.getOtherPlayersCommand(P1_ID, 2)).toStrictEqual('');
+  });
+
+  it('gets next command from other player', () => {
+    startGame(contract);
+    // p2 commits move
+    contract.commitCommands(P1_ID, '{"a":"a"}');
+    contract.commitCommands(P1_ID, '{"b":"b"}'); // should not overwrite command
+    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(''); // p1 hasn't commited any moves yet
+    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual('');
+
+    // p1 gets command from p2
+    VMContext.setSigner_account_id(P1_ID);
+    VMContext.setPredecessor_account_id(P1_ID);
+    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(
+      '{"a":"a"}'
+    );
+    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(
+      '{"a":"a"}'
+    );
+
+    // p1 commits move
+    contract.commitCommands(P1_ID, '{"c":"c"}'); // the command will be returned to the client, and the clien't doesn't need to long poll.
+    // p2 gets command from p1
+    VMContext.setSigner_account_id(P2_ID);
+    VMContext.setPredecessor_account_id(P2_ID);
+    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual('');
+    // p1 commits more moves
+    VMContext.setSigner_account_id(P1_ID);
+    VMContext.setPredecessor_account_id(P1_ID);
+    contract.commitCommands(P1_ID, '{"d":"d"}'); // will be able to commit move because p2 commited moves first in round 1
+    contract.commitCommands(P1_ID, '{"e":"e"}'); // should not overwrite command
+    // p2 gets command from p1
+    VMContext.setSigner_account_id(P2_ID);
+    VMContext.setPredecessor_account_id(P2_ID);
+    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(
+      '{"d":"d"}'
+    );
+  });
 });
