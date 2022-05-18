@@ -55,8 +55,9 @@ export class Contract {
 
   /**
    * The contract remembers the state, and pass it along to the other player after they commit their commands.
-   * @param json the client state.
-   * @returns {string} the commands from the other player if they commited their commands already
+   * The client needs to long poll, asking for the other player's next command if this function returns ''.
+   * @param json the client state, such as moves and actions
+   * @returns {string} the commands from the other player if they commited their commands already.
    */
   commitCommands(gameId: string, json: string): string {
     const game: Game | null = this.getGame(gameId);
@@ -78,12 +79,32 @@ export class Contract {
   }
 
   /**
+   * The client may need to long poll for the commands made by the other player
+   * @param gameId
+   * @param pTurn the action made on the other players turn
+   * @returns
+   */
+  getOtherPlayersCommand(gameId: string, pTurn: i32): string {
+    const game: Game | null = this.getGame(gameId);
+    if (!game) return '';
+    this.assertOwnGame(
+      game,
+      'Can only get commands for game we are participating in'
+    );
+    let otherPlayerCommands: string[] = [];
+    if (context.sender == game.p2) otherPlayerCommands = game.p2Commands;
+    if (context.sender == game.p1) otherPlayerCommands = game.p1Commands;
+    if (otherPlayerCommands.length >= pTurn) return otherPlayerCommands[pTurn];
+    return '';
+  }
+
+  /**
    *
    * @param game
    * @returns {number[]} always a tuple of two numbers where the first index is our own turn
    */
   private getPlayerTurns(game: Game): number[] {
-    this.assertOwnGame(game);
+    this.assertOwnGame(game, 'Can only concede own game');
     let ownTurn = game.p1Turn;
     let otherTurn = game.p2Turn;
     if (context.sender == game.p2) {
@@ -93,10 +114,10 @@ export class Contract {
     return [ownTurn, otherTurn];
   }
 
-  private assertOwnGame(game: Game): void {
-    assert(
-      game.p1 == context.sender || game.p2 == context.sender,
-      'Can only concede own game'
-    );
+  private assertOwnGame(
+    game: Game,
+    msg: string = 'Can only call functions on a game we are participating in'
+  ): void {
+    assert(game.p1 == context.sender || game.p2 == context.sender, msg);
   }
 }
