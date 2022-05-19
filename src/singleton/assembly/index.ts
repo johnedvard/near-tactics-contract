@@ -6,21 +6,25 @@ import { JOINING, ENDED, PLAYING } from './gameState';
 export class Contract {
   games: PersistentMap<string, Game> = new PersistentMap<string, Game>('games');
 
-  createGame(): void {
+  createGame(): boolean {
     const existingGame = this.getGame(context.sender);
     if (existingGame.isNull() || existingGame.gameState == ENDED) {
       const game = new Game(context.sender);
       this.games.set(game.gameId, game);
+      return true;
     }
+    return false;
   }
 
   joinGame(gameId: string): boolean {
     const game: Game = this.getGame(gameId);
     assert(!game.isNull(), 'Game does not exist');
-    assert(
-      game.p1 != context.sender,
-      'Cannot join a game we created ourselves'
-    );
+    // TODO (johnedvard) Should we assert or return false?
+    // assert(
+    //   game.p1 != context.sender,
+    //   'Cannot join a game we created ourselves'
+    // );
+    if (game.p1 == context.sender) return false; // 'Cannot join a game we created ourselves'
     if (game.gameState == PLAYING || game.gameState == ENDED) return false;
     if (game.gameState == JOINING) {
       game.startGame(context.sender);
@@ -123,6 +127,17 @@ export class Contract {
     if (game.currentTurn < otherTurn) turnToGet = game.currentTurn;
     return this.getOtherPlayersCommand(gameId, turnToGet);
   }
+
+  /**
+   * After a round is over, each player needs to commit their game states to make sure both are in sync.
+   * Otherewise, there might be a bug in the front-end or someone is cheating
+   */
+  submitGameStateAfterRound(gameId: string, json: string): void {
+    const game: Game | null = this.getGame(gameId);
+    if (!game) return;
+    // TODO (johnedvard) set game state and compare results
+  }
+
   /**
    *
    * @param game

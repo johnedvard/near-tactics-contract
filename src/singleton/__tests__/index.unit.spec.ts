@@ -45,6 +45,13 @@ describe('Create and join game', () => {
     expect(game).not.toStrictEqual(game2);
   });
 
+  it('cannot join game created by self', () => {
+    contract.createGame();
+    expect(contract.joinGame(P1_ID)).toStrictEqual(false);
+    const game = contract.getGame(P1_ID);
+    expect(game.p2).toStrictEqual('');
+  });
+
   it('joins existing game', () => {
     startGame(contract);
     const game = contract.getGame(P1_ID);
