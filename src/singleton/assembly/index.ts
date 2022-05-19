@@ -34,7 +34,23 @@ export class Contract {
   }
 
   /**
+   * TODO (johnedvard) Maybe the clients should create the state based on a seed (a transaction hash)
+   * Then both clients would get the same game state.
+   */
+  getInitialState(gameId: string): string {
+    // Return the inital state before players make any commands
+    const game: Game = this.getGame(gameId);
+    if (!game) return '';
+    if (game.p1 && game.p2 && game.gameState == PLAYING) {
+      // TODO (johnedvard) return the actual initial state
+      return 'inital state';
+    }
+    return '';
+  }
+
+  /**
    * TODO (johnedvard) consider renaming method, and always returning true if p2 asks if p1 joined.
+   * TODO (johnedvard) consider returning an object with error code, message and data
    */
   hasPlayer2Joined(gameId: string): boolean {
     const game: Game = this.getGame(gameId);

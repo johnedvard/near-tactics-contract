@@ -169,6 +169,11 @@ describe('Store commands', () => {
     expect(contract.getOtherPlayersCommand(P1_ID, 2)).toStrictEqual('');
   });
 
+  it('cannot get any commands before player 2 has joined', () => {
+    contract.createGame();
+    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(''); // p2 hasn't joined
+  });
+
   it('gets next command from other player', () => {
     startGame(contract);
     // p2 commits move

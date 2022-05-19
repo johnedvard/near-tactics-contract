@@ -8,15 +8,18 @@ echo "Create and join a game"
 echo ---------------------------------------------------------
 echo
 
-export CONTRACT=dev-1652956581177-81538800841370
+# Update contract ID after deploying contract
+export CONTRACT=dev-1652964929956-58391803779828
 export P1=johnonym.testnet
-export P2=dev-1652956581177-81538800841370
+export P2=dev-1652964929956-58391803779828
 [ -z "$CONTRACT" ] && echo "Missing \$CONTRACT environment variable" && exit 1
 [ -z "$CONTRACT" ] || echo "Found it! \$CONTRACT is set to [ $CONTRACT ]"
 
 near call $CONTRACT createGame '{}' --accountId $P1
-near call $CONTRACT joinGame '{"gameId":'\""${P1}"\"'}' --accountId $P1
-# near call $CONTRACT hasPlayer2Joined '{"gameId":'\""${$P1}"\"'}' --accountId $P1
+near call $CONTRACT joinGame '{"gameId":'\""${P1}"\"'}' --accountId $P2
+near call $CONTRACT hasPlayer2Joined  '{"gameId":'\""${P1}"\"'}' --accountId $P1
+near call $CONTRACT getOtherPlayersNextCommand  '{"gameId":'\""${P1}"\"'}' --accountId $P1
+near call $CONTRACT getOtherPlayersNextCommand  '{"gameId":'\""${P1}"\"'}' --accountId $P2
 
 echo
 echo
