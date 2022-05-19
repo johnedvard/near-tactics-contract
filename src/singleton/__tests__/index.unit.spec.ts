@@ -25,6 +25,7 @@ describe('Create and join game', () => {
     expect(game.isNull()).toBeFalsy();
     expect(game.p1).toStrictEqual(P1_ID);
     expect(game.p2).toStrictEqual(''); // player 2 not joined yet
+    expect(contract.hasPlayer2Joined(P1_ID)).toStrictEqual(false);
   });
 
   it('does not create two games while playing or joining', () => {
@@ -48,6 +49,10 @@ describe('Create and join game', () => {
     startGame(contract);
     const game = contract.getGame(P1_ID);
     expect(game.p2).toStrictEqual(P2_ID);
+    expect(contract.hasPlayer2Joined(P1_ID)).toStrictEqual(false); // because p2 cannot ask if p1 has joined, it's given.
+    VMContext.setSigner_account_id(P1_ID);
+    VMContext.setPredecessor_account_id(P1_ID);
+    expect(contract.hasPlayer2Joined(P1_ID)).toStrictEqual(true);
   });
 
   it('Cannot join ended or game in progress', () => {

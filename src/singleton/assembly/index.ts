@@ -29,6 +29,18 @@ export class Contract {
     return true;
   }
 
+  /**
+   * TODO (johnedvard) consider renaming method, and always returning true if p2 asks if p1 joined.
+   */
+  hasPlayer2Joined(gameId: string): boolean {
+    const game: Game = this.getGame(gameId);
+    if (!game) return false;
+    // Only p1 can ask if p2 joined the game
+    if (context.sender == game.p2) return false; // TODO (johnedvard) Maybe use assert instead.
+    if (game.p2 && game.gameState == PLAYING) return true;
+    return false;
+  }
+
   getGame(gameId: string): Game {
     if (this.games.contains(gameId)) {
       return this.games.getSome(gameId);
