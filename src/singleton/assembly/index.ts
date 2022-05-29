@@ -2,6 +2,11 @@ import { context, PersistentMap, logging } from 'near-sdk-core';
 import { Game } from './game';
 import { JOINING, ENDED, PLAYING } from './gameState';
 
+class MsgCode {
+  msg: string;
+  code: i32;
+}
+
 @nearBindgen
 export class Contract {
   games: PersistentMap<string, Game> = new PersistentMap<string, Game>('games');
@@ -16,7 +21,7 @@ export class Contract {
     return false;
   }
 
-  joinGame(gameId: string): boolean {
+  joinGame(gameId: string): MsgCode {
     const game: Game = this.getGame(gameId);
     assert(!game.isNull(), 'Game does not exist');
     // TODO (johnedvard) Should we assert or return false?
@@ -24,13 +29,15 @@ export class Contract {
     //   game.p1 != context.sender,
     //   'Cannot join a game we created ourselves'
     // );
-    if (game.p1 == context.sender) return false; // 'Cannot join a game we created ourselves'
-    if (game.gameState == PLAYING || game.gameState == ENDED) return false;
+    if (game.p1 == context.sender)
+      return { code: 1, msg: 'Cannot join a game we created ourselves' };
+    if (game.gameState == PLAYING || game.gameState == ENDED)
+      return { code: 2, msg: 'game in progress or ended' };
     if (game.gameState == JOINING) {
       game.startGame(context.sender);
       this.games.set(game.gameId, game); // Need to actually update the game state to storage
     }
-    return true;
+    return { code: 0, msg: 'Joined game' };
   }
 
   /**

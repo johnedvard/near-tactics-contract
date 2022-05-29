@@ -47,7 +47,7 @@ describe('Create and join game', () => {
 
   it('cannot join game created by self', () => {
     contract.createGame();
-    expect(contract.joinGame(P1_ID)).toStrictEqual(false);
+    expect(contract.joinGame(P1_ID).code).toStrictEqual(1);
     const game = contract.getGame(P1_ID);
     expect(game.p2).toStrictEqual('');
   });
@@ -64,9 +64,9 @@ describe('Create and join game', () => {
 
   it('Cannot join ended or game in progress', () => {
     startGame(contract);
-    expect(contract.joinGame(P1_ID)).toBeFalsy();
+    expect(contract.joinGame(P1_ID).code).toStrictEqual(2);
     contract.endGame(P1_ID);
-    expect(contract.joinGame(P1_ID)).toBeFalsy();
+    expect(contract.joinGame(P1_ID).code).toStrictEqual(2);
   });
 });
 
