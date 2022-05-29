@@ -2,6 +2,7 @@ import { context, PersistentMap, logging } from 'near-sdk-core';
 import { Game } from './game';
 import { JOINING, ENDED, PLAYING } from './gameState';
 
+@nearBindgen
 class MsgCode {
   msg: string;
   code: i32;
