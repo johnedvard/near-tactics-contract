@@ -11,14 +11,17 @@ class MsgCode {
 export class Contract {
   games: PersistentMap<string, Game> = new PersistentMap<string, Game>('games');
 
-  createGame(): boolean {
+  createGame(): MsgCode {
     const existingGame = this.getGame(context.sender);
     if (existingGame.isNull() || existingGame.gameState == ENDED) {
       const game = new Game(context.sender);
       this.games.set(game.gameId, game);
-      return true;
+      return { code: 0, msg: 'Game created with id: ' + context.sender };
     }
-    return false;
+    return {
+      code: 1,
+      msg: 'Game already created', // Can only create one game at a time
+    };
   }
 
   joinGame(gameId: string): MsgCode {
