@@ -1,4 +1,5 @@
 import { JOINING, ENDED, PLAYING } from './gameState';
+import { Unit } from './unit';
 
 @nearBindgen
 export class Game {
@@ -8,17 +9,25 @@ export class Game {
   p2: string = '';
   p1Turn: i32 = 0;
   p2Turn: i32 = 0;
+  p1Units: Unit[] = [];
+  p2Units: Unit[] = [];
   currentTurn: i32 = 0;
   p1Commands: string[] = ['']; // each position represents the commands for the given turn (pos 0 for p1Turn=0, pos 1 fo p1Turn=1)
   p2Commands: string[] = [''];
 
-  constructor(p1: string) {
-    this.gameId = p1; // TODO (johnedvard) make it possible to have more than one game
+  constructor(p1: string, units: Unit[]) {
+    this.gameId = p1; // TODO (johnedvard) make it possible to have more than one game?
     this.p1 = p1;
+    for (let i = 0; i < units.length; i++) {
+      this.p1Units.push(units[i]);
+    }
   }
 
-  startGame(p2: string): void {
+  startGame(p2: string, units: Unit[]): void {
     this.p2 = p2;
+    for (let i = 0; i < units.length; i++) {
+      this.p2Units.push(units[i]);
+    }
     this.setGameState(PLAYING);
   }
 

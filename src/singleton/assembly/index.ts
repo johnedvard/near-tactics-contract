@@ -1,21 +1,23 @@
 import { context, PersistentMap, logging } from 'near-sdk-core';
 import { Game } from './game';
 import { JOINING, ENDED, PLAYING } from './gameState';
-
-@nearBindgen
-class MsgCode {
-  msg: string;
-  code: i32;
-}
+import { MsgCode } from './msgCode';
+import { Unit } from './unit';
 
 @nearBindgen
 export class Contract {
   games: PersistentMap<string, Game> = new PersistentMap<string, Game>('games');
 
-  createGame(): MsgCode {
+  createGame(units: Unit[]): MsgCode {
+    if (!units || units.length != 3) {
+      return { code: 3, msg: 'Must pass exactly 3 units' };
+    }
+    if (!this.containsUniqueUnits(units)) {
+      return { code: 4, msg: 'Must have three unique units' };
+    }
     const existingGame = this.getGame(context.sender);
     if (existingGame.isNull() || existingGame.gameState == ENDED) {
-      const game = new Game(context.sender);
+      const game = new Game(context.sender, units);
       this.games.set(game.gameId, game);
       return { code: 0, msg: 'Game created with id: ' + context.sender };
     }
@@ -25,7 +27,7 @@ export class Contract {
     };
   }
 
-  joinGame(gameId: string): MsgCode {
+  joinGame(gameId: string, units: Unit[]): MsgCode {
     const game: Game = this.getGame(gameId);
     assert(!game.isNull(), 'Game does not exist');
     // TODO (johnedvard) Should we assert or return false?
@@ -38,10 +40,17 @@ export class Contract {
     if (game.gameState == PLAYING || game.gameState == ENDED)
       return { code: 2, msg: 'game in progress or ended' };
     if (game.gameState == JOINING) {
-      game.startGame(context.sender);
+      if (!units || units.length != 3) {
+        return { code: 3, msg: 'Must pass exactly 3 units' };
+      }
+      if (!this.containsUniqueUnits(units)) {
+        return { code: 4, msg: 'Must have three unique units' };
+      }
+      game.startGame(context.sender, units);
       this.games.set(game.gameId, game); // Need to actually update the game state to storage
+      return { code: 0, msg: 'Joined game' };
     }
-    return { code: 0, msg: 'Joined game' };
+    return { code: 404, msg: 'Unhandled condition' };
   }
 
   /**
@@ -76,7 +85,7 @@ export class Contract {
     if (this.games.contains(gameId)) {
       return this.games.getSome(gameId);
     }
-    return new Game('');
+    return new Game('', []);
   }
 
   /**
@@ -186,5 +195,17 @@ export class Contract {
     msg: string = 'Can only call functions on a game we are participating in'
   ): void {
     assert(game.p1 == context.sender || game.p2 == context.sender, msg);
+  }
+
+  private containsUniqueUnits(units: Unit[]): boolean {
+    const unitMap: Map<string, i32> = new Map<string, i32>();
+    for (let i = 0; i < units.length; i++) {
+      if (!unitMap.has(units[i].unitType)) {
+        unitMap.set(units[i].unitType, 1);
+      } else {
+        return false;
+      }
+    }
+    return true;
   }
 }

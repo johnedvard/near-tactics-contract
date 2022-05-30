@@ -1,10 +1,16 @@
 import { VMContext } from 'near-sdk-as';
 import { Contract } from '../assembly';
 import { Game } from '../assembly/game';
+import { Unit } from '../assembly/unit';
 
 let contract: Contract;
 const P1_ID = 'p1.near';
 const P2_ID = 'p2.near';
+const units: Unit[] = [
+  { unitType: 'samurai' },
+  { unitType: 'human' },
+  { unitType: 'goblin' },
+];
 beforeEach(() => {
   contract = new Contract();
   VMContext.setSigner_account_id(P1_ID);
@@ -12,15 +18,15 @@ beforeEach(() => {
 });
 
 const startGame = (contract: Contract): void => {
-  contract.createGame();
+  contract.createGame(units);
   VMContext.setSigner_account_id(P2_ID);
   VMContext.setPredecessor_account_id(P2_ID);
-  contract.joinGame(P1_ID);
+  contract.joinGame(P1_ID, units);
 };
 
 describe('Create and join game', () => {
   it('creates new game', () => {
-    contract.createGame();
+    contract.createGame(units);
     const game = contract.getGame(P1_ID);
     expect(game.isNull()).toBeFalsy();
     expect(game.p1).toStrictEqual(P1_ID);
@@ -28,26 +34,50 @@ describe('Create and join game', () => {
     expect(contract.hasPlayer2Joined(P1_ID)).toStrictEqual(false);
   });
 
+  it('cannot cerate game with duplicate units', () => {
+    expect(
+      contract.createGame([
+        { unitType: 'samurai' },
+        { unitType: 'samurai' },
+        { unitType: 'goblin' },
+      ]).code
+    ).toBe(4);
+  });
+
+  it('cannot cerate game with more or less than 3 units', () => {
+    expect(
+      contract.createGame([{ unitType: 'human' }, { unitType: 'samurai' }]).code
+    ).toBe(3);
+    expect(
+      contract.createGame([
+        { unitType: 'human' },
+        { unitType: 'samurai' },
+        { unitType: 'goblin' },
+        { unitType: 'fish' },
+      ]).code
+    ).toBe(3);
+  });
+
   it('does not create two games while playing or joining', () => {
-    contract.createGame();
+    contract.createGame(units);
     const game = contract.getGame(P1_ID);
-    contract.createGame();
+    contract.createGame(units);
     const game2 = contract.getGame(P1_ID);
     expect(game).toStrictEqual(game2);
   });
 
   it('creates new game if game is ended', () => {
-    contract.createGame();
+    contract.createGame(units);
     const game = contract.getGame(P1_ID);
     game.endGame();
-    contract.createGame();
+    contract.createGame(units);
     const game2 = contract.getGame(P1_ID);
     expect(game).not.toStrictEqual(game2);
   });
 
   it('cannot join game created by self', () => {
-    contract.createGame();
-    expect(contract.joinGame(P1_ID).code).toStrictEqual(1);
+    contract.createGame(units);
+    expect(contract.joinGame(P1_ID, units).code).toStrictEqual(1);
     const game = contract.getGame(P1_ID);
     expect(game.p2).toStrictEqual('');
   });
@@ -64,9 +94,9 @@ describe('Create and join game', () => {
 
   it('Cannot join ended or game in progress', () => {
     startGame(contract);
-    expect(contract.joinGame(P1_ID).code).toStrictEqual(2);
+    expect(contract.joinGame(P1_ID, units).code).toStrictEqual(2);
     contract.endGame(P1_ID);
-    expect(contract.joinGame(P1_ID).code).toStrictEqual(2);
+    expect(contract.joinGame(P1_ID, units).code).toStrictEqual(2);
   });
 });
 
@@ -170,7 +200,7 @@ describe('Store commands', () => {
   });
 
   it('cannot get any commands before player 2 has joined', () => {
-    contract.createGame();
+    contract.createGame(units);
     expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(''); // p2 hasn't joined
   });
 
