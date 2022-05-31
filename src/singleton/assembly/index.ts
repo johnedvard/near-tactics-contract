@@ -9,14 +9,14 @@ export class Contract {
   games: PersistentMap<string, Game> = new PersistentMap<string, Game>('games');
 
   createGame(units: Unit[]): MsgCode {
-    if (!units || units.length != 3) {
-      return { code: 3, msg: 'Must pass exactly 3 units' };
-    }
-    if (!this.containsUniqueUnits(units)) {
-      return { code: 4, msg: 'Must have three unique units' };
-    }
     const existingGame = this.getGame(context.sender);
     if (existingGame.isNull() || existingGame.gameState == ENDED) {
+      if (!units || units.length != 3) {
+        return { code: 3, msg: 'Must pass exactly 3 units' };
+      }
+      if (!this.containsUniqueUnits(units)) {
+        return { code: 4, msg: 'Must have three unique units' };
+      }
       const game = new Game(context.sender, units);
       this.games.set(game.gameId, game);
       return { code: 0, msg: 'Game created with id: ' + context.sender };

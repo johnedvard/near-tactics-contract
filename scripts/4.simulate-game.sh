@@ -15,11 +15,13 @@ export P2=dev-1652964929956-58391803779828
 [ -z "$CONTRACT" ] && echo "Missing \$CONTRACT environment variable" && exit 1
 [ -z "$CONTRACT" ] || echo "Found it! \$CONTRACT is set to [ $CONTRACT ]"
 
-near call $CONTRACT createGame '{}' --accountId $P1
-near call $CONTRACT joinGame '{"gameId":'\""${P1}"\"'}' --accountId $P2
+
+near call $CONTRACT createGame '{"units":[{"unitType":"human"},{"unitType":"fish"},{"unitType":"goblin"}]}' --accountId $P1
+near call $CONTRACT joinGame '{"gameId":'\""${P1}"\"', "units":[{"unitType":"human"},{"unitType":"fish"},{"unitType":"goblin"}]}' --accountId $P2
 near call $CONTRACT hasPlayer2Joined  '{"gameId":'\""${P1}"\"'}' --accountId $P1
 near call $CONTRACT getOtherPlayersNextCommand  '{"gameId":'\""${P1}"\"'}' --accountId $P1
 near call $CONTRACT getOtherPlayersNextCommand  '{"gameId":'\""${P1}"\"'}' --accountId $P2
+near call $CONTRACT endGame '{"gameId":'\""${P1}"\"'}' --accountId $P1
 
 echo
 echo
