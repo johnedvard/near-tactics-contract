@@ -96,7 +96,7 @@ describe('Create and join game', () => {
     startGame(contract);
     expect(contract.joinGame(P1_ID, units).code).toStrictEqual(2);
     contract.endGame(P1_ID);
-    expect(contract.joinGame(P1_ID, units).code).toStrictEqual(2);
+    expect(contract.joinGame(P1_ID, units).code).toStrictEqual(5);
   });
 });
 

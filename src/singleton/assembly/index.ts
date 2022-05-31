@@ -38,8 +38,8 @@ export class Contract {
     // );
     if (game.p1 == context.sender)
       return { code: 1, msg: 'Cannot join a game we created ourselves' };
-    if (game.gameState == PLAYING || game.gameState == ENDED)
-      return { code: 2, msg: 'game in progress or ended' };
+    if (game.gameState == PLAYING) return { code: 2, msg: 'game in progress' };
+    if (game.gameState == ENDED) return { code: 5, msg: 'game ended' };
     if (game.gameState == JOINING) {
       if (!units || units.length != 3) {
         return { code: 3, msg: 'Must pass exactly 3 units' };
@@ -62,11 +62,11 @@ export class Contract {
     // Return the inital state before players make any commands
     const game: Game = this.getGame(gameId);
     assert(!game.isNull(), 'Game does not exist');
-    if (!game) return { p1Units: [], p2Units: [] };
     if (game.p1 && game.p2 && game.gameState == PLAYING) {
       // TODO (johnedvard) return the actual initial state
       return { p1Units: game.p1Units, p2Units: game.p2Units };
     }
+    // Ended or not started
     return { p1Units: [], p2Units: [] };
   }
 
