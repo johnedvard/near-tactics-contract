@@ -22,6 +22,12 @@ export class Contract {
       this.games.set(game.gameId, game);
       return { code: 0, msg: 'Game created with id: ' + context.sender };
     }
+    if (!existingGame.isNull()) {
+      if (existingGame.gameState == PLAYING)
+        return { code: 2, msg: 'Game in progress' };
+      if (existingGame.gameState == JOINING)
+        return { code: 5, msg: 'Game created. p2 not joined yet' };
+    }
     return {
       code: 1,
       msg: 'Game already created', // Can only create one game at a time
@@ -58,7 +64,7 @@ export class Contract {
    * TODO (johnedvard) Maybe the clients should create the state based on a seed (a transaction hash)
    * Then both clients would get the same game state.
    */
-  getInitialState(gameId: string): GameData {
+  getInitialGameData(gameId: string): GameData {
     // Return the inital state before players make any commands
     const game: Game = this.getGame(gameId);
     assert(!game.isNull(), 'Game does not exist');

@@ -98,6 +98,13 @@ describe('Create and join game', () => {
     contract.endGame(P1_ID);
     expect(contract.joinGame(P1_ID, units).code).toStrictEqual(5);
   });
+
+  it('Returns initial game data', () => {
+    startGame(contract);
+    const initialData = contract.getInitialGameData(P1_ID);
+    expect(initialData.p1Units).toStrictEqual(units);
+    expect(initialData.p2Units).toStrictEqual(units);
+  });
 });
 
 describe('Take turns', () => {
