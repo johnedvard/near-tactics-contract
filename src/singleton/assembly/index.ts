@@ -1,5 +1,6 @@
 import { context, PersistentMap, logging } from 'near-sdk-core';
 import { Game } from './game';
+import { GameData } from './gameData';
 import { JOINING, ENDED, PLAYING } from './gameState';
 import { MsgCode } from './msgCode';
 import { Unit } from './unit';
@@ -57,15 +58,16 @@ export class Contract {
    * TODO (johnedvard) Maybe the clients should create the state based on a seed (a transaction hash)
    * Then both clients would get the same game state.
    */
-  getInitialState(gameId: string): string {
+  getInitialState(gameId: string): GameData {
     // Return the inital state before players make any commands
     const game: Game = this.getGame(gameId);
-    if (!game) return '';
+    assert(!game.isNull(), 'Game does not exist');
+    if (!game) return { p1Units: [], p2Units: [] };
     if (game.p1 && game.p2 && game.gameState == PLAYING) {
       // TODO (johnedvard) return the actual initial state
-      return 'inital state';
+      return { p1Units: game.p1Units, p2Units: game.p2Units };
     }
-    return '';
+    return { p1Units: [], p2Units: [] };
   }
 
   /**
