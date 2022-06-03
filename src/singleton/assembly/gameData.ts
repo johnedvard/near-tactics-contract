@@ -4,4 +4,5 @@ import { Unit } from './unit';
 export class GameData {
   p1Units: Unit[] = [];
   p2Units: Unit[] = [];
+  currentTurn: i32 = 0;
 }

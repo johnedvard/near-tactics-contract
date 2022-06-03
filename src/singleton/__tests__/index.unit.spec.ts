@@ -202,8 +202,17 @@ describe('Store commands', () => {
     expect(contract.getOtherPlayersCommand(P1_ID, 0)).toStrictEqual(
       '{"a":"a"}'
     );
-    expect(contract.getOtherPlayersCommand(P1_ID, 1)).toStrictEqual('');
-    expect(contract.getOtherPlayersCommand(P1_ID, 2)).toStrictEqual('');
+    expect(contract.getAllCommands(P1_ID)).toStrictEqual({
+      p1Commands: [''],
+      p2Commands: ['{"a":"a"}', ''],
+    }); // p1 hasn't commited any moves yet
+  });
+
+  it('gets all commands', () => {
+    startGame(contract);
+    // p2 commits move
+    contract.commitCommands(P1_ID, '{"a":"a"}');
+    contract.commitCommands(P1_ID, '{"b":"b"}'); // should not overwrite command
   });
 
   it('cannot get any commands before player 2 has joined', () => {

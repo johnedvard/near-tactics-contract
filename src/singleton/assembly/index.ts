@@ -3,6 +3,7 @@ import { Game } from './game';
 import { GameData } from './gameData';
 import { JOINING, ENDED, PLAYING } from './gameState';
 import { MsgCode } from './msgCode';
+import { PlayerCommands } from './playerCommand';
 import { Unit } from './unit';
 
 @nearBindgen
@@ -70,10 +71,14 @@ export class Contract {
     assert(!game.isNull(), 'Game does not exist');
     if (game.p1 && game.p2 && game.gameState == PLAYING) {
       // TODO (johnedvard) return the actual initial state
-      return { p1Units: game.p1Units, p2Units: game.p2Units };
+      return {
+        p1Units: game.p1Units,
+        p2Units: game.p2Units,
+        currentTurn: game.currentTurn,
+      };
     }
     // Ended or not started
-    return { p1Units: [], p2Units: [] };
+    return { p1Units: [], p2Units: [], currentTurn: 0 };
   }
 
   /**
@@ -145,17 +150,27 @@ export class Contract {
    * @returns
    */
   getOtherPlayersCommand(gameId: string, pTurn: i32): string {
-    const game: Game | null = this.getGame(gameId);
-    if (!game) return '';
+    const game: Game = this.getGame(gameId);
     this.assertOwnGame(
       game,
       'Can only get commands for game we are participating in'
     );
+    if (game.isNull()) return '';
     let otherPlayerCommands: string[] = [];
     if (context.sender == game.p2) otherPlayerCommands = game.p1Commands;
     if (context.sender == game.p1) otherPlayerCommands = game.p2Commands;
     if (otherPlayerCommands.length > pTurn) return otherPlayerCommands[pTurn];
     return '';
+  }
+
+  getAllCommands(gameId: string): PlayerCommands {
+    const game: Game = this.getGame(gameId);
+    this.assertOwnGame(
+      game,
+      'Can only get commands for game we are participating in'
+    );
+    if (game.isNull()) return { p1Commands: [''], p2Commands: [''] };
+    return { p1Commands: game.p1Commands, p2Commands: game.p2Commands };
   }
 
   /**
