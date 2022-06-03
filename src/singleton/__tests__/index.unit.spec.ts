@@ -105,6 +105,15 @@ describe('Create and join game', () => {
     expect(initialData.p1Units).toStrictEqual(units);
     expect(initialData.p2Units).toStrictEqual(units);
   });
+
+  it('Returns game in progress', () => {
+    contract.createGame(units);
+    expect(contract.isGameInProgress(P1_ID)).toBeFalsy();
+    VMContext.setSigner_account_id(P2_ID);
+    VMContext.setPredecessor_account_id(P2_ID);
+    contract.joinGame(P1_ID, units);
+    expect(contract.isGameInProgress(P1_ID)).toBeTruthy();
+  });
 });
 
 describe('Take turns', () => {
