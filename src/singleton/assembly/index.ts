@@ -197,6 +197,12 @@ export class Contract {
     // TODO (johnedvard) set game state and compare results
   }
 
+  hasCreatedGame(): boolean {
+    const game: Game = this.getGame(context.sender);
+    assert(!game.isNull(), 'Game does not exist');
+    return true;
+  }
+
   /**
    *
    * @param game
