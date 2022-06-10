@@ -3,7 +3,7 @@ import { Game } from './game';
 import { GameData } from './gameData';
 import { JOINING, ENDED, PLAYING } from './gameState';
 import { MsgCode } from './msgCode';
-import { PlayerCommands } from './playerCommand';
+import { PlayerCommands } from './playerCommands';
 import { Unit } from './unit';
 
 @nearBindgen
