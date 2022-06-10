@@ -44,7 +44,7 @@ export class Game {
     if (playerId == this.p2) this.p2Turn++;
   }
 
-  storePlayerCommand(playerId: string, json: string): void {
+  storePlayerCommands(playerId: string, json: string): void {
     let pCommands = this.p1Commands;
     let pTurn = this.p1Turn;
     if (playerId == this.p2) {

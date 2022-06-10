@@ -131,7 +131,7 @@ export class Contract {
     const ownTurn = turns[0];
     if (ownTurn == game.currentTurn) {
       // can only commit one command each turn.
-      game.storePlayerCommand(context.sender, json);
+      game.storePlayerCommands(context.sender, json);
       game.advancePlayerTurn(context.sender);
       if (game.p1Turn == game.p2Turn) {
         // both players have committed their commands for the round
@@ -149,7 +149,7 @@ export class Contract {
    * @param pTurn the action made on the other players turn
    * @returns
    */
-  getOtherPlayersCommand(gameId: string, pTurn: i32): string {
+  getOtherPlayerCommands(gameId: string, pTurn: i32): string {
     const game: Game = this.getGame(gameId);
     this.assertOwnGame(
       game,
@@ -174,9 +174,9 @@ export class Contract {
   }
 
   /**
-   * Similar to {@see getOtherPlayersCommand}, but will always give correct command according to round and player's turn
+   * Similar to {@see getOtherPlayerCommands}, but will always give correct command according to round and player's turn
    */
-  getOtherPlayersNextCommand(gameId: string): string {
+  getOtherPlayerNextCommands(gameId: string): string {
     const game: Game | null = this.getGame(gameId);
     if (!game) return '';
     const turns = this.getPlayerTurns(game);
@@ -184,7 +184,7 @@ export class Contract {
     let turnToGet: i32 = otherTurn;
     // There's a possibility that the other player commited two moves before own player got the first result during long polling
     if (game.currentTurn < otherTurn) turnToGet = game.currentTurn;
-    return this.getOtherPlayersCommand(gameId, turnToGet);
+    return this.getOtherPlayerCommands(gameId, turnToGet);
   }
 
   /**

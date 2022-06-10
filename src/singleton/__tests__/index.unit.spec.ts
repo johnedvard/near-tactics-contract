@@ -202,13 +202,13 @@ describe('Store commands', () => {
     // p2 commits move
     contract.commitCommands(P1_ID, '{"a":"a"}');
     contract.commitCommands(P1_ID, '{"b":"b"}'); // should not overwrite command
-    expect(contract.getOtherPlayersCommand(P1_ID, 0)).toStrictEqual(''); // p1 hasn't commited any moves yet
-    expect(contract.getOtherPlayersCommand(P1_ID, 1)).toStrictEqual('');
+    expect(contract.getOtherPlayerCommands(P1_ID, 0)).toStrictEqual(''); // p1 hasn't commited any moves yet
+    expect(contract.getOtherPlayerCommands(P1_ID, 1)).toStrictEqual('');
 
     // p1 gets command from p2
     VMContext.setSigner_account_id(P1_ID);
     VMContext.setPredecessor_account_id(P1_ID);
-    expect(contract.getOtherPlayersCommand(P1_ID, 0)).toStrictEqual(
+    expect(contract.getOtherPlayerCommands(P1_ID, 0)).toStrictEqual(
       '{"a":"a"}'
     );
     expect(contract.getAllCommands(P1_ID)).toStrictEqual({
@@ -226,7 +226,7 @@ describe('Store commands', () => {
 
   it('cannot get any commands before player 2 has joined', () => {
     contract.createGame(units);
-    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(''); // p2 hasn't joined
+    expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual(''); // p2 hasn't joined
   });
 
   it('gets next command from other player', () => {
@@ -234,16 +234,16 @@ describe('Store commands', () => {
     // p2 commits move
     contract.commitCommands(P1_ID, '{"a":"a"}');
     contract.commitCommands(P1_ID, '{"b":"b"}'); // should not overwrite command
-    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(''); // p1 hasn't commited any moves yet
-    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual('');
+    expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual(''); // p1 hasn't commited any moves yet
+    expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual('');
 
     // p1 gets command from p2
     VMContext.setSigner_account_id(P1_ID);
     VMContext.setPredecessor_account_id(P1_ID);
-    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(
+    expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual(
       '{"a":"a"}'
     );
-    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(
+    expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual(
       '{"a":"a"}'
     );
 
@@ -252,7 +252,7 @@ describe('Store commands', () => {
     // p2 gets command from p1
     VMContext.setSigner_account_id(P2_ID);
     VMContext.setPredecessor_account_id(P2_ID);
-    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual('');
+    expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual('');
     // p1 commits more moves
     VMContext.setSigner_account_id(P1_ID);
     VMContext.setPredecessor_account_id(P1_ID);
@@ -261,7 +261,7 @@ describe('Store commands', () => {
     // p2 gets command from p1
     VMContext.setSigner_account_id(P2_ID);
     VMContext.setPredecessor_account_id(P2_ID);
-    expect(contract.getOtherPlayersNextCommand(P1_ID)).toStrictEqual(
+    expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual(
       '{"d":"d"}'
     );
   });
