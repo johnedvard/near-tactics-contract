@@ -62,7 +62,7 @@ export class Game {
    * Increase the currentTurn in the game
    * @returns {number} the current round (after advancing to the next round)
    */
-  advanceToNextRound(): number {
+  advanceToNextRound(): i32 {
     if (this.p1Turn == this.p2Turn) this.currentTurn++;
     return this.currentTurn;
   }

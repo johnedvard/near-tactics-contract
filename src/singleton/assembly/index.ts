@@ -4,6 +4,7 @@ import { GameData } from './gameData';
 import { JOINING, ENDED, PLAYING } from './gameState';
 import { MsgCode } from './msgCode';
 import { PlayerCommands } from './playerCommands';
+import { TurnCommand } from './turnCommand';
 import { Unit } from './unit';
 
 @nearBindgen
@@ -124,9 +125,10 @@ export class Contract {
    * @param json the client state, such as moves and actions
    * @returns {string} the commands from the other player if they commited their commands already.
    */
-  commitCommands(gameId: string, json: string): string {
+  commitCommands(gameId: string, json: string): TurnCommand {
     const game: Game | null = this.getGame(gameId);
-    if (!game) return '';
+    let res: TurnCommand = { turn: -1, json: '' };
+    if (!game) return res;
     const turns = this.getPlayerTurns(game);
     const ownTurn = turns[0];
     if (ownTurn == game.currentTurn) {
@@ -135,12 +137,13 @@ export class Contract {
       game.advancePlayerTurn(context.sender);
       if (game.p1Turn == game.p2Turn) {
         // both players have committed their commands for the round
-        game.advanceToNextRound();
-        // TODO (johnedvard) return the other player's commited commands
+        const newTurn: i32 = game.advanceToNextRound();
+        // return the other player's commited commands
+        res = this.getOtherPlayerCommands(gameId, newTurn - 1);
       }
       this.games.set(game.gameId, game); // Need to actually update the game state to storage
     }
-    return '';
+    return res;
   }
 
   /**
@@ -149,18 +152,19 @@ export class Contract {
    * @param pTurn the action made on the other players turn
    * @returns
    */
-  getOtherPlayerCommands(gameId: string, pTurn: i32): string {
+  getOtherPlayerCommands(gameId: string, pTurn: i32): TurnCommand {
     const game: Game = this.getGame(gameId);
     this.assertOwnGame(
       game,
       'Can only get commands for game we are participating in'
     );
-    if (game.isNull()) return '';
+    if (game.isNull()) return { turn: -1, json: '' };
     let otherPlayerCommands: string[] = [];
     if (context.sender == game.p2) otherPlayerCommands = game.p1Commands;
     if (context.sender == game.p1) otherPlayerCommands = game.p2Commands;
-    if (otherPlayerCommands.length > pTurn) return otherPlayerCommands[pTurn];
-    return '';
+    if (otherPlayerCommands.length > pTurn)
+      return { turn: pTurn, json: otherPlayerCommands[pTurn] };
+    return { turn: pTurn, json: '' };
   }
 
   getAllCommands(gameId: string): PlayerCommands {
@@ -176,9 +180,9 @@ export class Contract {
   /**
    * Similar to {@see getOtherPlayerCommands}, but will always give correct command according to round and player's turn
    */
-  getOtherPlayerNextCommands(gameId: string): string {
+  getOtherPlayerNextCommands(gameId: string): TurnCommand {
     const game: Game | null = this.getGame(gameId);
-    if (!game) return '';
+    if (!game) return { turn: -1, json: '' };
     const turns = this.getPlayerTurns(game);
     const otherTurn = turns[1];
     let turnToGet: i32 = otherTurn;
