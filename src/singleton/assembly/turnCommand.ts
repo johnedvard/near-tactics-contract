@@ -1,5 +1,7 @@
 @nearBindgen
 export class TurnCommand {
-  turn: i32;
+  p1Turn: i32;
+  p2Turn: i32;
+  currentTurn: i32;
   json: string;
 }

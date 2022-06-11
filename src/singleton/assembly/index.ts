@@ -127,7 +127,12 @@ export class Contract {
    */
   commitCommands(gameId: string, json: string): TurnCommand {
     const game: Game | null = this.getGame(gameId);
-    let res: TurnCommand = { turn: -1, json: '' };
+    let res: TurnCommand = {
+      currentTurn: -1,
+      p1Turn: -1,
+      p2Turn: -1,
+      json: '',
+    };
     if (!game) return res;
     const turns = this.getPlayerTurns(game);
     const ownTurn = turns[0];
@@ -158,13 +163,24 @@ export class Contract {
       game,
       'Can only get commands for game we are participating in'
     );
-    if (game.isNull()) return { turn: -1, json: '' };
+    if (game.isNull())
+      return { currentTurn: -1, p1Turn: -1, p2Turn: -1, json: '' };
     let otherPlayerCommands: string[] = [];
     if (context.sender == game.p2) otherPlayerCommands = game.p1Commands;
     if (context.sender == game.p1) otherPlayerCommands = game.p2Commands;
     if (otherPlayerCommands.length > pTurn)
-      return { turn: pTurn, json: otherPlayerCommands[pTurn] };
-    return { turn: pTurn, json: '' };
+      return {
+        currentTurn: game.currentTurn,
+        p1Turn: game.p1Turn,
+        p2Turn: game.p2Turn,
+        json: otherPlayerCommands[pTurn],
+      };
+    return {
+      currentTurn: game.currentTurn,
+      p1Turn: game.p1Turn,
+      p2Turn: game.p2Turn,
+      json: '',
+    };
   }
 
   getAllCommands(gameId: string): PlayerCommands {
@@ -179,16 +195,26 @@ export class Contract {
 
   /**
    * Similar to {@see getOtherPlayerCommands}, but will always give correct command according to round and player's turn
+   * Can only ask for other players next commands if we already commited our commands for the turn
+   * If currentTurn:0, p1:1, p2:0, then p1 won't get any results (because p2 hasn't committed anything for this turn yet)
+   * If currentTurn:1, p1:1, p2:1, then p1 will get p2s move for p2:0, (p2 can also get p1's moves from round 0. Client needs to understand what to do)
+   * If currentTurn:1, p1:1, p2:2, then p1 will get nothing, because p2 is waiting for p1's moves, and p1 will get p2s moves after commiting to turn
    */
   getOtherPlayerNextCommands(gameId: string): TurnCommand {
     const game: Game | null = this.getGame(gameId);
-    if (!game) return { turn: -1, json: '' };
+    if (!game) return { currentTurn: -1, p1Turn: -1, p2Turn: -1, json: '' };
     const turns = this.getPlayerTurns(game);
+    const ownTurn = turns[0];
     const otherTurn = turns[1];
-    let turnToGet: i32 = otherTurn;
-    // There's a possibility that the other player commited two moves before own player got the first result during long polling
-    if (game.currentTurn < otherTurn) turnToGet = game.currentTurn;
-    return this.getOtherPlayerCommands(gameId, turnToGet);
+    let turnToGet: i32 = ownTurn - 1;
+    if (ownTurn == otherTurn && turnToGet >= 0)
+      return this.getOtherPlayerCommands(gameId, turnToGet);
+    return {
+      currentTurn: game.currentTurn,
+      p1Turn: game.p1Turn,
+      p2Turn: game.p2Turn,
+      json: '',
+    };
   }
 
   /**

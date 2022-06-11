@@ -203,11 +203,15 @@ describe('Store commands', () => {
     contract.commitCommands(P1_ID, '{"a":"a"}');
     contract.commitCommands(P1_ID, '{"b":"b"}'); // should not overwrite command
     expect(contract.getOtherPlayerCommands(P1_ID, 0)).toStrictEqual({
-      turn: 0,
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 1,
       json: '',
     }); // p1 hasn't commited any moves yet
     expect(contract.getOtherPlayerCommands(P1_ID, 1)).toStrictEqual({
-      turn: 1,
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 1,
       json: '',
     });
 
@@ -215,7 +219,9 @@ describe('Store commands', () => {
     VMContext.setSigner_account_id(P1_ID);
     VMContext.setPredecessor_account_id(P1_ID);
     expect(contract.getOtherPlayerCommands(P1_ID, 0)).toStrictEqual({
-      turn: 0,
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 1,
       json: '{"a":"a"}',
     });
     expect(contract.getAllCommands(P1_ID)).toStrictEqual({
@@ -234,58 +240,85 @@ describe('Store commands', () => {
   it('cannot get any commands before player 2 has joined', () => {
     contract.createGame(units);
     expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual({
-      turn: 0,
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 0,
       json: '',
     }); // p2 hasn't joined
   });
 
   it('gets next command from other player', () => {
     startGame(contract);
-    // p2 commits move
+    // p2 commits move, (p1 has not commited anything)
     contract.commitCommands(P1_ID, '{"a":"a"}');
     contract.commitCommands(P1_ID, '{"b":"b"}'); // should not overwrite command
     expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual({
-      turn: 0,
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 1,
       json: '',
-    }); // p1 hasn't commited any moves yet
+    }); // p1 hasn't commited any moves yet, result is '', still waiting for p1's moves
     expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual({
-      turn: 0,
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 1,
       json: '',
     });
 
     // p1 gets command from p2
     VMContext.setSigner_account_id(P1_ID);
     VMContext.setPredecessor_account_id(P1_ID);
+    // Cannot get the first commited command by p2, because we are not allowed to poll moves before we have commited our own
     expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual({
-      turn: 0,
-      json: '{"a":"a"}',
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 1,
+      json: '',
     });
     expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual({
-      turn: 0,
-      json: '{"a":"a"}',
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 1,
+      json: '',
     });
 
     // p1 commits move
-    const p2Commands = contract.commitCommands(P1_ID, '{"c":"c"}'); // the command will be returned to the client, and the clien't doesn't need to long poll.
-    expect(p2Commands).toStrictEqual({ turn: 0, json: '{"a":"a"}' });
+    const p2CommandsTurn0 = contract.commitCommands(P1_ID, '{"c":"c"}'); // the command will be returned to the client, and the clien't doesn't need to long poll.
+    // In the process of comitting own moves a turn has yet to advance
+    expect(p2CommandsTurn0).toStrictEqual({
+      currentTurn: 0,
+      p1Turn: 0,
+      p2Turn: 1,
+      json: '{"a":"a"}',
+    });
+    // The turn has now advanced. p1 is allowed to get p2's moves from round 0 as well, but the client need to understand that these commands are now old.
+    expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual({
+      currentTurn: 1,
+      p1Turn: 1,
+      p2Turn: 1,
+      json: '{"a":"a"}',
+    });
     // p2 gets command from p1
     VMContext.setSigner_account_id(P2_ID);
     VMContext.setPredecessor_account_id(P2_ID);
+    // p2 is still longpolling, we need to start the game for p2 too
     expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual({
-      turn: 1,
-      json: '',
+      currentTurn: 1,
+      p1Turn: 1,
+      p2Turn: 1,
+      json: '{"c":"c"}',
     });
-    // p1 commits more moves
-    VMContext.setSigner_account_id(P1_ID);
-    VMContext.setPredecessor_account_id(P1_ID);
+
     contract.commitCommands(P1_ID, '{"d":"d"}'); // will be able to commit move because p2 commited moves first in round 1
     contract.commitCommands(P1_ID, '{"e":"e"}'); // should not overwrite command
-    // p2 gets command from p1
+    // p2 gets command from p1, but cannot get results before commiting own moves
     VMContext.setSigner_account_id(P2_ID);
     VMContext.setPredecessor_account_id(P2_ID);
     expect(contract.getOtherPlayerNextCommands(P1_ID)).toStrictEqual({
-      turn: 1,
-      json: '{"d":"d"}',
+      currentTurn: 1,
+      p1Turn: 1,
+      p2Turn: 2,
+      json: '',
     });
   });
 });
