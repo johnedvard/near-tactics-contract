@@ -224,10 +224,11 @@ describe('Store commands', () => {
       p2Turn: 1,
       json: '{"a":"a"}',
     });
+    // TODO (johnedvard) Figure out how to correctly add and get commands.
     expect(contract.getAllCommands(P1_ID)).toStrictEqual({
       p1Commands: [''],
-      p2Commands: ['{"a":"a"}', ''],
-    }); // p1 hasn't commited any moves yet
+      p2Commands: [],
+    }); // p1 hasn't commited any moves yet, but cannot get the moves p2 commited (that's cheating)
   });
 
   it('gets all commands', () => {

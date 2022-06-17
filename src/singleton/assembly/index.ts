@@ -183,14 +183,33 @@ export class Contract {
     };
   }
 
+  /**
+   * Get all commands up until the latest current turn.
+   * Does not get the other player's last commands unless both has commited their moves on the same turn.
+   * @param gameId
+   * @returns
+   */
   getAllCommands(gameId: string): PlayerCommands {
     const game: Game = this.getGame(gameId);
     this.assertOwnGame(
       game,
       'Can only get commands for game we are participating in'
     );
-    if (game.isNull()) return { p1Commands: [''], p2Commands: [''] };
-    return { p1Commands: game.p1Commands, p2Commands: game.p2Commands };
+    let p1Commands = [''];
+    let p2Commands = [''];
+    if (game.isNull()) return { p1Commands, p2Commands };
+    if (context.sender == game.p1) {
+      p1Commands = game.p1Commands;
+      p2Commands = game.p2Commands.slice(0, game.currentTurn);
+    } else if (context.sender == game.p2) {
+      p2Commands = game.p2Commands;
+      p1Commands = game.p1Commands.slice(0, game.currentTurn);
+    } else {
+      // TODO (johnedvard) Figure out if non game participants should be allowed to get all commands, or only up to the current turn
+      p1Commands = game.p1Commands.slice(0, game.currentTurn);
+      p2Commands = game.p2Commands.slice(0, game.currentTurn);
+    }
+    return { p1Commands, p2Commands };
   }
 
   /**
